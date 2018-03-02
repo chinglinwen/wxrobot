@@ -69,26 +69,38 @@ func autoReply(session *wxweb.Session, msg *wxweb.ReceivedMessage) {
 	logs.Info("from: ", msg.FromUserName, "to: ", msg.ToUserName)
 	logs.Info("msg: ", msg.Content)
 
-	var reply string
-
 	json, err := json.MarshalIndent(msg, "", "  ")
 	if err != nil {
 		logs.Error(err)
 	}
 
-	resp, err := retryablehttp.Post(backendurl, bodytype, bytes.NewReader(json))
-	if err != nil {
-		logs.Error(err)
-		reply = "err: " + err.Error()
-	}
-
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(resp.Body)
-	reply = buf.String()
+	reply, err := request(backendurl, bodytype, json)
 
 	if msg.FromUserName == msg.ToUserName {
 		fmt.Println("it's from myself")
 		return
 	}
 	session.SendText("this is from robot:\n  "+reply, session.Bot.UserName, wxweb.RealTargetUserName(session, msg))
+}
+
+func request(url, bodytype string, body []byte) (reply string, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			return
+		}
+	}()
+	c := retryablehttp.NewClient()
+	c.RetryMax = 2
+
+	resp, err := c.Post(url, bodytype, bytes.NewReader(body))
+	if err != nil {
+		logs.Error(err)
+		reply = "err: " + err.Error()
+		return
+	}
+
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(resp.Body)
+	reply = buf.String()
+	return
 }
