@@ -3,7 +3,6 @@ package all
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/songtianyi/rrframework/logs"
@@ -76,11 +75,17 @@ func autoReply(session *wxweb.Session, msg *wxweb.ReceivedMessage) {
 
 	reply, err := request(backendurl, bodytype, json)
 
+	//fmt.Println("it's from myself"), it's just dosen't work
 	if msg.FromUserName == msg.ToUserName {
-		fmt.Println("it's from myself")
 		return
 	}
-	session.SendText("this is from robot:\n  "+reply, session.Bot.UserName, wxweb.RealTargetUserName(session, msg))
+
+	//  skip non-command
+	if reply == "" {
+		return
+	}
+
+	session.SendText("robot says:\n  "+reply, session.Bot.UserName, wxweb.RealTargetUserName(session, msg))
 }
 
 func request(url, bodytype string, body []byte) (reply string, err error) {
