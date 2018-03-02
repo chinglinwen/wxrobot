@@ -1,0 +1,1 @@
+./wxrobot &> a.log &
