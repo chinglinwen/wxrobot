@@ -2,16 +2,18 @@ package all
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
 
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/songtianyi/rrframework/logs"
 	"github.com/songtianyi/wechat-go/wxweb"
+	"github.com/tidwall/gjson"
 )
 
 var (
-	backendurl = "http://clwen.com:4000"
-	bodytype   = "application/json"
+	defaultBackend = &backend{url: "http://localhost:4000"}
 )
 
 /*
@@ -37,7 +39,11 @@ var (
 */
 
 // register plugin
-func Register(session *wxweb.Session) {
+func Register(session *wxweb.Session, options ...backendOption) {
+	for _, op := range options {
+		op(defaultBackend)
+	}
+
 	doregister(session, wxweb.MSG_TEXT, "text")
 	doregister(session, wxweb.MSG_IMG, "img")
 	doregister(session, wxweb.MSG_VOICE, "voice")
@@ -47,6 +53,20 @@ func Register(session *wxweb.Session) {
 	doregister(session, wxweb.MSG_SYS, "sys")
 	doregister(session, wxweb.MSG_WITHDRAW, "withdraw")
 	doregister(session, wxweb.MSG_INIT, "init")
+}
+
+type backend struct {
+	url string
+}
+
+type backendOption func(*backend)
+
+// SetBackendUrl change the default backend
+// default is "http://localhost:4000"
+func SetBackendUrl(url string) backendOption {
+	return func(b *backend) {
+		b.url = url
+	}
 }
 
 func doregister(session *wxweb.Session, key int, name string) {
@@ -73,7 +93,7 @@ func autoReply(session *wxweb.Session, msg *wxweb.ReceivedMessage) {
 		logs.Error(err)
 	}
 
-	reply, err := request(backendurl, bodytype, json)
+	reply, err := request(defaultBackend.url, json)
 
 	//fmt.Println("it's from myself"), it's just dosen't work
 	if msg.FromUserName == msg.ToUserName {
@@ -85,10 +105,38 @@ func autoReply(session *wxweb.Session, msg *wxweb.ReceivedMessage) {
 		return
 	}
 
-	session.SendText("robot says:\n  "+reply, session.Bot.UserName, wxweb.RealTargetUserName(session, msg))
+	replyType := gjson.Get(reply, "type").String()
+	replyData := gjson.Get(reply, "data").String()
+	replyErr := gjson.Get(reply, "error").String()
+
+	var n int
+	if len(replyData) < 10 {
+		n = len(replyData)
+	}
+	fmt.Println("got:", replyType, len(replyData), replyData[0:n], "err", replyErr)
+
+	if replyErr != "" {
+		session.SendText("robot err:\n  "+replyErr, session.Bot.UserName, wxweb.RealTargetUserName(session, msg))
+		return
+	}
+
+	if replyType == "image" {
+		logs.Info("got image reply")
+
+		decoded, err := base64.StdEncoding.DecodeString(replyData)
+		if err != nil {
+			session.SendText("robot err:\n  "+err.Error(), session.Bot.UserName, wxweb.RealTargetUserName(session, msg))
+			return
+		}
+		//todo: it's still error: BaseResponse.Ret=1
+		session.SendImgFromBytes(decoded, "http://wx2.sinaimg.cn/mw1024/9d52c073gy1foxoszeu10j20sg0zkk4y.jpg", session.Bot.UserName, wxweb.RealTargetUserName(session, msg))
+		return
+	}
+	logs.Info("text reply:", replyData)
+	session.SendText("robot says:\n  "+replyData, session.Bot.UserName, wxweb.RealTargetUserName(session, msg))
 }
 
-func request(url, bodytype string, body []byte) (reply string, err error) {
+func request(url string, body []byte) (reply string, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			return
@@ -97,7 +145,8 @@ func request(url, bodytype string, body []byte) (reply string, err error) {
 	c := retryablehttp.NewClient()
 	c.RetryMax = 2
 
-	resp, err := c.Post(url, bodytype, bytes.NewReader(body))
+	//resp, err := c.Post(url, "application/json", bytes.NewReader(body))
+	resp, err := c.Post(url, "", bytes.NewReader(body))
 	if err != nil {
 		logs.Error(err)
 		reply = "err: " + err.Error()
@@ -107,5 +156,6 @@ func request(url, bodytype string, body []byte) (reply string, err error) {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(resp.Body)
 	reply = buf.String()
+
 	return
 }
