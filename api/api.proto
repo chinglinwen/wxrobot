@@ -1,9 +1,11 @@
 
+syntax = "proto3";
+
 // The greeting service definition.
 service Api {
   rpc GetText (TextRequest) returns (TextReply) {}
 
-  //rpc SendCmd (HelloRequest) returns (HelloReply) {}
+  //rpc SendCmd (TextCmd) returns (TextReply) {}
 }
 
 // The request message containing the user's name.
@@ -15,5 +17,6 @@ message TextRequest {
 
 // The response message containing the greetings
 message TextReply {
-  string message = 1;
+  string error = 1;
+  string data = 2;
 }
