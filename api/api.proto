@@ -1,0 +1,19 @@
+
+// The greeting service definition.
+service Api {
+  rpc GetText (TextRequest) returns (TextReply) {}
+
+  //rpc SendCmd (HelloRequest) returns (HelloReply) {}
+}
+
+// The request message containing the user's name.
+message TextRequest {
+  string name = 1;
+  string text = 2;
+  //string group = 3;
+}
+
+// The response message containing the greetings
+message TextReply {
+  string message = 1;
+}
