@@ -1,9 +1,11 @@
 package main
 
 import (
+	"flag"
 	"time"
 
 	"github.com/chinglinwen/wxrobot/plugins/all"
+	"github.com/chinglinwen/wxrobot/service"
 
 	"github.com/songtianyi/rrframework/logs"
 	"github.com/songtianyi/wechat-go/plugins/wxweb/config"
@@ -11,19 +13,38 @@ import (
 	"github.com/songtianyi/wechat-go/wxweb"
 )
 
+var (
+	backendurl = flag.String("url", "http://localhost:4000", "backend url")
+	port       = flag.String("p", ":50051", "default grpc listenging port")
+)
+
 func main() {
+	logs.Info("starting...")
+
+	flag.Parse()
+	all.SetBackendUrl(*backendurl)
+
 	// create session
 	session, err := wxweb.CreateSession(nil, nil, wxweb.TERMINAL_MODE)
 	if err != nil {
 		logs.Error(err)
 		return
 	}
+	service.SetSession(session)
+	service.SetListeningPort(*port)
+
 	// load plugins for this session
 	all.Register(session)
 	switcher.Register(session)
 	config.Register(session)
 
 	session.HandlerRegister.EnableByName("switcher")
+
+	// listening grpc request
+	logs.Info("start listening on port: ", *port)
+	go func() {
+		service.GrpcServe()
+	}()
 
 	for {
 		if err := session.LoginAndServe(false); err != nil {

@@ -5,11 +5,11 @@
 Package api is a generated protocol buffer package.
 
 It is generated from these files:
-        api.proto
+	api.proto
 
 It has these top-level messages:
-        TextRequest
-        TextReply
+	TextRequest
+	TextReply
 */
 package api
 
@@ -60,21 +60,13 @@ func (m *TextRequest) GetText() string {
 
 // The response message containing the greetings
 type TextReply struct {
-	Error string `protobuf:"bytes,1,opt,name=error" json:"error,omitempty"`
-	Data  string `protobuf:"bytes,2,opt,name=data" json:"data,omitempty"`
+	Data string `protobuf:"bytes,1,opt,name=data" json:"data,omitempty"`
 }
 
 func (m *TextReply) Reset()                    { *m = TextReply{} }
 func (m *TextReply) String() string            { return proto.CompactTextString(m) }
 func (*TextReply) ProtoMessage()               {}
 func (*TextReply) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
-
-func (m *TextReply) GetError() string {
-	if m != nil {
-		return m.Error
-	}
-	return ""
-}
 
 func (m *TextReply) GetData() string {
 	if m != nil {
@@ -99,7 +91,7 @@ const _ = grpc.SupportPackageIsVersion4
 // Client API for Api service
 
 type ApiClient interface {
-	GetText(ctx context.Context, in *TextRequest, opts ...grpc.CallOption) (*TextReply, error)
+	Text(ctx context.Context, in *TextRequest, opts ...grpc.CallOption) (*TextReply, error)
 }
 
 type apiClient struct {
@@ -110,9 +102,9 @@ func NewApiClient(cc *grpc.ClientConn) ApiClient {
 	return &apiClient{cc}
 }
 
-func (c *apiClient) GetText(ctx context.Context, in *TextRequest, opts ...grpc.CallOption) (*TextReply, error) {
+func (c *apiClient) Text(ctx context.Context, in *TextRequest, opts ...grpc.CallOption) (*TextReply, error) {
 	out := new(TextReply)
-	err := grpc.Invoke(ctx, "/Api/GetText", in, out, c.cc, opts...)
+	err := grpc.Invoke(ctx, "/Api/Text", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -122,27 +114,27 @@ func (c *apiClient) GetText(ctx context.Context, in *TextRequest, opts ...grpc.C
 // Server API for Api service
 
 type ApiServer interface {
-	GetText(context.Context, *TextRequest) (*TextReply, error)
+	Text(context.Context, *TextRequest) (*TextReply, error)
 }
 
 func RegisterApiServer(s *grpc.Server, srv ApiServer) {
 	s.RegisterService(&_Api_serviceDesc, srv)
 }
 
-func _Api_GetText_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Api_Text_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(TextRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ApiServer).GetText(ctx, in)
+		return srv.(ApiServer).Text(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/Api/GetText",
+		FullMethod: "/Api/Text",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApiServer).GetText(ctx, req.(*TextRequest))
+		return srv.(ApiServer).Text(ctx, req.(*TextRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -152,8 +144,8 @@ var _Api_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*ApiServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetText",
-			Handler:    _Api_GetText_Handler,
+			MethodName: "Text",
+			Handler:    _Api_Text_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -163,14 +155,13 @@ var _Api_serviceDesc = grpc.ServiceDesc{
 func init() { proto.RegisterFile("api.proto", fileDescriptor0) }
 
 var fileDescriptor0 = []byte{
-	// 144 bytes of a gzipped FileDescriptorProto
+	// 128 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0x4c, 0x2c, 0xc8, 0xd4,
 	0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x57, 0x32, 0xe5, 0xe2, 0x0e, 0x49, 0xad, 0x28, 0x09, 0x4a, 0x2d,
 	0x2c, 0x4d, 0x2d, 0x2e, 0x11, 0x12, 0xe2, 0x62, 0xc9, 0x4b, 0xcc, 0x4d, 0x95, 0x60, 0x54, 0x60,
 	0xd4, 0xe0, 0x0c, 0x02, 0xb3, 0x41, 0x62, 0x25, 0xa9, 0x15, 0x25, 0x12, 0x4c, 0x10, 0x31, 0x10,
-	0x5b, 0xc9, 0x94, 0x8b, 0x13, 0xa2, 0xad, 0x20, 0xa7, 0x52, 0x48, 0x84, 0x8b, 0x35, 0xb5, 0xa8,
-	0x28, 0xbf, 0x08, 0xaa, 0x0b, 0xc2, 0x01, 0x69, 0x4b, 0x49, 0x2c, 0x49, 0x84, 0x69, 0x03, 0xb1,
-	0x8d, 0x74, 0xb8, 0x98, 0x1d, 0x0b, 0x32, 0x85, 0x54, 0xb9, 0xd8, 0xdd, 0x53, 0x4b, 0x40, 0x06,
-	0x08, 0xf1, 0xe8, 0x21, 0x59, 0x2f, 0xc5, 0xa5, 0x07, 0x37, 0x55, 0x89, 0x21, 0x89, 0x0d, 0xec,
-	0x44, 0x63, 0x40, 0x00, 0x00, 0x00, 0xff, 0xff, 0xfd, 0xf3, 0x29, 0xf7, 0xaf, 0x00, 0x00, 0x00,
+	0x5b, 0x49, 0x9e, 0x8b, 0x13, 0xa2, 0xad, 0x20, 0xa7, 0x12, 0xa4, 0x20, 0x25, 0xb1, 0x24, 0x11,
+	0xa6, 0x09, 0xc4, 0x36, 0xd2, 0xe4, 0x62, 0x76, 0x2c, 0xc8, 0x14, 0x52, 0xe2, 0x62, 0x01, 0xa9,
+	0x13, 0xe2, 0xd1, 0x43, 0xb2, 0x45, 0x8a, 0x4b, 0x0f, 0xae, 0x59, 0x89, 0x21, 0x89, 0x0d, 0xec,
+	0x12, 0x63, 0x40, 0x00, 0x00, 0x00, 0xff, 0xff, 0x3b, 0x50, 0x79, 0xb9, 0x96, 0x00, 0x00, 0x00,
 }

@@ -13,7 +13,8 @@ import (
 )
 
 var (
-	defaultBackend = &backend{url: "http://localhost:4000"}
+	defaulturl     = "http://localhost:4000"
+	defaultBackend = newBackend(defaulturl)
 )
 
 /*
@@ -57,6 +58,15 @@ func Register(session *wxweb.Session, options ...backendOption) {
 
 type backend struct {
 	url string
+}
+
+func newBackend(url string) *backend {
+	return &backend{url: url}
+}
+
+func SetDefaultBackend(url string) {
+	defaultBackend.url = url
+	return
 }
 
 type backendOption func(*backend)
