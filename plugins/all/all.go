@@ -98,6 +98,10 @@ func autoReply(session *wxweb.Session, msg *wxweb.ReceivedMessage) {
 	logs.Info("from: ", msg.FromUserName, "to: ", msg.ToUserName)
 	logs.Info("msg: ", msg.Content)
 
+	if msg.IsGroup != true {
+		return
+	}
+
 	json, err := json.MarshalIndent(msg, "", "  ")
 	if err != nil {
 		logs.Error(err)
