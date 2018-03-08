@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/songtianyi/rrframework/logs"
@@ -98,7 +97,7 @@ func autoReply(session *wxweb.Session, msg *wxweb.ReceivedMessage) {
 	logs.Info("from: ", msg.FromUserName, "to: ", msg.ToUserName)
 	logs.Info("msg: ", msg.Content)
 
-	if msg.IsGroup != true {
+	if msg.IsGroup == true {
 		return
 	}
 
@@ -127,7 +126,7 @@ func autoReply(session *wxweb.Session, msg *wxweb.ReceivedMessage) {
 	if len(replyData) < 10 {
 		n = len(replyData)
 	}
-	fmt.Println("got:", replyType, len(replyData), replyData[0:n], "err", replyErr)
+	logs.Println("got:", replyType, len(replyData), replyData[0:n], "err", replyErr)
 
 	if replyErr != "" {
 		session.SendText("robot err:\n  "+replyErr, session.Bot.UserName, wxweb.RealTargetUserName(session, msg))
@@ -144,6 +143,9 @@ func autoReply(session *wxweb.Session, msg *wxweb.ReceivedMessage) {
 		}
 		//todo: it's still error: BaseResponse.Ret=1
 		session.SendImgFromBytes(decoded, "http://wx2.sinaimg.cn/mw1024/9d52c073gy1foxoszeu10j20sg0zkk4y.jpg", session.Bot.UserName, wxweb.RealTargetUserName(session, msg))
+		return
+	}
+	if replyData == "" {
 		return
 	}
 	logs.Info("text reply:", replyData)
