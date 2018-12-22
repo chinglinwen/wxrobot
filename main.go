@@ -16,10 +16,13 @@ import (
 var (
 	backendurl = flag.String("url", "http://localhost:4000", "backend url")
 	port       = flag.String("p", ":50051", "default grpc listenging port")
+	grouplist  = flag.String("groups", "", "allowed group list(eg. group1,group2)")
+	groupon    = flag.Bool("g", false, "turn on group or not")
 )
 
 func main() {
 	logs.Info("starting...")
+	logs.Info("allowed groups: ", grouplist)
 
 	flag.Parse()
 	all.SetBackendUrl(*backendurl)

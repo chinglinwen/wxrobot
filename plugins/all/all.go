@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"strings"
 
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/songtianyi/rrframework/logs"
@@ -46,13 +47,17 @@ func Register(session *wxweb.Session, options ...backendOption) {
 
 	doregister(session, wxweb.MSG_TEXT, "text")
 	doregister(session, wxweb.MSG_IMG, "img")
-	doregister(session, wxweb.MSG_VOICE, "voice")
-	doregister(session, wxweb.MSG_EMOTION, "gif")
-	doregister(session, wxweb.MSG_LINK, "link")
-	doregister(session, wxweb.MSG_SYSNOTICE, "sysnotice")
-	doregister(session, wxweb.MSG_SYS, "sys")
-	doregister(session, wxweb.MSG_WITHDRAW, "withdraw")
-	doregister(session, wxweb.MSG_INIT, "init")
+	//doregister(session, wxweb.MSG_VOICE, "voice")
+	//doregister(session, wxweb.MSG_EMOTION, "gif")
+	//doregister(session, wxweb.MSG_LINK, "link")
+	//doregister(session, wxweb.MSG_SYSNOTICE, "sysnotice")
+	//doregister(session, wxweb.MSG_SYS, "sys")
+	//doregister(session, wxweb.MSG_WITHDRAW, "withdraw")
+	//doregister(session, wxweb.MSG_INIT, "init")
+}
+
+type option struct {
+	url string
 }
 
 type backend struct {
@@ -94,12 +99,12 @@ func autoReply(session *wxweb.Session, msg *wxweb.ReceivedMessage) {
 		// skip init
 		return
 	}
-	logs.Info("from: ", msg.FromUserName, "to: ", msg.ToUserName)
+	logs.Info("from: ", msg.FromUserName, "to: ", msg.ToUserName, "real: ", wxweb.RealTargetUserName(session, msg))
 	logs.Info("msg: ", msg.Content)
 
-	if msg.IsGroup == true {
-		return
-	}
+	// if msg.IsGroup == true {
+	// 	return
+	// }
 
 	json, err := json.MarshalIndent(msg, "", "  ")
 	if err != nil {
@@ -122,11 +127,19 @@ func autoReply(session *wxweb.Session, msg *wxweb.ReceivedMessage) {
 	replyData := gjson.Get(reply, "data").String()
 	replyErr := gjson.Get(reply, "error").String()
 
+	// remove space at the left and right
+	replyData = strings.Trim(replyData, " \t")
+
+	if replyData == "" && replyErr == "" {
+		return
+	}
+
+	// log part of reply only
 	var n int
 	if len(replyData) < 10 {
 		n = len(replyData)
 	}
-	logs.Println("got:", replyType, len(replyData), replyData[0:n], "err", replyErr)
+	logs.Info("got:", replyType, len(replyData), replyData[0:n], "err", replyErr)
 
 	if replyErr != "" {
 		session.SendText("robot err:\n  "+replyErr, session.Bot.UserName, wxweb.RealTargetUserName(session, msg))
@@ -145,11 +158,14 @@ func autoReply(session *wxweb.Session, msg *wxweb.ReceivedMessage) {
 		session.SendImgFromBytes(decoded, "http://wx2.sinaimg.cn/mw1024/9d52c073gy1foxoszeu10j20sg0zkk4y.jpg", session.Bot.UserName, wxweb.RealTargetUserName(session, msg))
 		return
 	}
-	if replyData == "" {
+
+	logs.Info("text reply:", replyData)
+	_, _, err = session.SendText("robot says:\n  "+replyData, session.Bot.UserName, wxweb.RealTargetUserName(session, msg))
+	if err != nil {
+		logs.Error("send error:", err)
 		return
 	}
-	logs.Info("text reply:", replyData)
-	session.SendText("robot says:\n  "+replyData, session.Bot.UserName, wxweb.RealTargetUserName(session, msg))
+	logs.Info("send ok")
 }
 
 func request(url string, body []byte) (reply string, err error) {

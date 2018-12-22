@@ -49,8 +49,9 @@ func ShowGroups() {
 //   sendtext("filehelper", text)   //not ok
 //   sendtext("Nickname", text)     //not ok
 func SendText(name, text string) error {
-	if sessionReady != true {
-		return fmt.Errorf("it may not logged in")
+	err := checkBeforeSend(name, text)
+	if err != nil {
+		return err
 	}
 
 	users := session.Cm.GetContactsByName(name)
@@ -64,11 +65,29 @@ func SendText(name, text string) error {
 
 // eg. sendtextquanpin("san", "hello1by-py")
 func SendTextQuanPin(name, text string) error {
+	err := checkBeforeSend(name, text)
+	if err != nil {
+		return err
+	}
+
 	if sessionReady != true {
 		return fmt.Errorf("it may not logged in")
 	}
 	log.Printf("name: %v, text: %v\n", name, text)
 	user := session.Cm.GetContactByPYQuanPin(name)
 	session.SendText(text, session.Bot.UserName, user.UserName)
+	return nil
+}
+
+func checkBeforeSend(name, text string) error {
+	if name == "" {
+		return fmt.Errorf("empty name to send")
+	}
+	if text == "" {
+		return fmt.Errorf("empty text to send")
+	}
+	if sessionReady != true {
+		return fmt.Errorf("it may not logged in")
+	}
 	return nil
 }
