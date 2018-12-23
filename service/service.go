@@ -1,56 +1,72 @@
 package service
 
 import (
-	"context"
-	"fmt"
 	"log"
-	"net"
+	"time"
 
-	pb "github.com/chinglinwen/wxrobot/api"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
+	"github.com/songtianyi/rrframework/logs"
+	"github.com/songtianyi/wechat-go/wxweb"
 )
 
 var (
-	defaultPort   = ":50051" //grpc listening port
-	readyReceiver = "xiubi"  //notify ready
+	session       *wxweb.Session
+	SessionReady  bool
+	readyReceiver = "xiubi" //notify ready
 )
-
-func SetListeningPort(port string) {
-	defaultPort = port
-	return
-}
 
 func SetReadyReceiver(receiver string) {
 	readyReceiver = receiver
 	return
 }
 
-type server struct{}
-
-//, opts ...grpc.CallOption
-func (s *server) Text(ctx context.Context, in *pb.TextRequest) (*pb.TextReply, error) {
-	if sessionReady != true {
-		return nil, fmt.Errorf("it may not logged in")
+func init() {
+	logs.Info("creating session...")
+	// create session
+	var err error
+	session, err = wxweb.CreateSession(nil, nil, wxweb.TERMINAL_MODE)
+	if err != nil {
+		logs.Error(err)
+		return
 	}
+
+	// load plugins for this session
+	Register(session)
+	// switcher.Register(session)
+	// config.Register(session)
+
+	// session.HandlerRegister.EnableByName("switcher")
 	go func() {
-		SendText(in.Name, in.Text)
+		for {
+			if err := session.LoginAndServe(false); err != nil {
+				logs.Error("session exit, %s", err)
+				for i := 0; i < 3; i++ {
+					logs.Info("trying re-login with cache")
+					if err := session.LoginAndServe(true); err != nil {
+						logs.Error("re-login error, %s", err)
+					}
+					time.Sleep(3 * time.Second)
+				}
+				if session, err = wxweb.CreateSession(nil, session.HandlerRegister, wxweb.TERMINAL_MODE); err != nil {
+					logs.Error("create new sesion failed, %s", err)
+					break
+				}
+			} else {
+				logs.Info("closed by user")
+				break
+			}
+		}
 	}()
-	return &pb.TextReply{Data: "Sended to " + in.Name + " " + in.Text}, nil
+
+	wait()
 }
 
-func GrpcServe() {
-	lis, err := net.Listen("tcp", defaultPort)
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+func wait() {
+	for session.Cm == nil {
+		time.Sleep(3 * time.Second)
+		log.Println("waiting session...")
 	}
-	s := grpc.NewServer()
-	pb.RegisterApiServer(s, &server{})
+	SessionReady = true
+	log.Println("wx session logged in.")
 
-	// Register reflection service on gRPC server.
-	reflection.Register(s)
-
-	if err := s.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
-	}
+	SendText(readyReceiver, "xiubi is ready : )\n")
 }

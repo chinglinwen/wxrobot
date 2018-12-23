@@ -1,4 +1,4 @@
-package all
+package service
 
 import (
 	"bytes"
@@ -56,6 +56,17 @@ func Register(session *wxweb.Session, options ...backendOption) {
 	//doregister(session, wxweb.MSG_INIT, "init")
 }
 
+func doregister(session *wxweb.Session, key int, name string) {
+	err := session.HandlerRegister.Add(key, wxweb.Handler(autoReply), name)
+	if err != nil {
+		logs.Error(err)
+	}
+	err = session.HandlerRegister.EnableByName(name)
+	if err != nil {
+		logs.Error(err)
+	}
+}
+
 type option struct {
 	url string
 }
@@ -80,17 +91,6 @@ type backendOption func(*backend)
 func SetBackendUrl(url string) backendOption {
 	return func(b *backend) {
 		b.url = url
-	}
-}
-
-func doregister(session *wxweb.Session, key int, name string) {
-	err := session.HandlerRegister.Add(key, wxweb.Handler(autoReply), name)
-	if err != nil {
-		logs.Error(err)
-	}
-	err = session.HandlerRegister.EnableByName(name)
-	if err != nil {
-		logs.Error(err)
 	}
 }
 

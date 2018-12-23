@@ -1,4 +1,4 @@
-package all
+package service
 
 import (
 	"encoding/base64"

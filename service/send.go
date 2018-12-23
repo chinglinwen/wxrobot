@@ -1,37 +1,12 @@
 package service
 
 import (
+	"encoding/base64"
 	"fmt"
 	"log"
-	"time"
 
 	"github.com/songtianyi/wechat-go/wxweb"
 )
-
-// set session
-var (
-	session      *wxweb.Session
-	sessionReady bool
-)
-
-func SetSession(s *wxweb.Session) {
-	session = s
-	go func() {
-		wait()
-	}()
-	return
-}
-
-func wait() {
-	for session.Cm == nil {
-		time.Sleep(3 * time.Second)
-		log.Println("waiting session...")
-	}
-	sessionReady = true
-	log.Println("wx session logged in.")
-
-	SendText(readyReceiver, "xiubi is ready : )\n")
-}
 
 func ShowGroups() {
 	users := session.Cm.GetGroupContacts()
@@ -63,6 +38,26 @@ func SendText(name, text string) error {
 	return nil
 }
 
+func SendImage(data []byte, url, name string, session *wxweb.Session) {
+	log.Printf("%v bytes,url: %v, name: %v, session: %v", len(data), url, name, session)
+
+	users := session.Cm.GetContactsByName(name)
+	log.Printf("got %v users for name: %v\n", len(users), name)
+	for _, v := range users {
+		log.Printf("try send to name: %v\n", name)
+
+		decoded, _ := base64.StdEncoding.DecodeString(string(data))
+		// if err != nil {
+		// 	log.Println("base64")
+		// 	//session.SendText("robot err:\n  "+err.Error(), session.Bot.UserName, v.UserName)
+		// 	return
+		// }
+		//todo: it's still error: BaseResponse.Ret=1
+		session.SendImgFromBytes(decoded, url, session.Bot.UserName, v.UserName)
+		log.Println("sended")
+	}
+}
+
 // eg. sendtextquanpin("san", "hello1by-py")
 func SendTextQuanPin(name, text string) error {
 	err := checkBeforeSend(name, text)
@@ -70,9 +65,6 @@ func SendTextQuanPin(name, text string) error {
 		return err
 	}
 
-	if sessionReady != true {
-		return fmt.Errorf("it may not logged in")
-	}
 	log.Printf("name: %v, text: %v\n", name, text)
 	user := session.Cm.GetContactByPYQuanPin(name)
 	session.SendText(text, session.Bot.UserName, user.UserName)
@@ -85,9 +77,6 @@ func checkBeforeSend(name, text string) error {
 	}
 	if text == "" {
 		return fmt.Errorf("empty text to send")
-	}
-	if sessionReady != true {
-		return fmt.Errorf("it may not logged in")
 	}
 	return nil
 }

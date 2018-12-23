@@ -1,25 +1,52 @@
 package service
 
 import (
+	"encoding/base64"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"net/http"
 	"testing"
 	"time"
 )
 
-//func TestMain(m *testing.M) {
-//	var err error
-//	session, err = wxweb.CreateSession(nil, nil, wxweb.TERMINAL_MODE)
-//	checkerr(err)
-//
-//	go func() {
-//		m.Run()
-//	}()
-//	err = session.LoginAndServe(false)
-//
-//	log.Println("start run test...")
-//	os.Exit(0)
-//}
+// func TestMain(m *testing.M) {
+// 	var err error
+// 	session, err = wxweb.CreateSession(nil, nil, wxweb.TERMINAL_MODE)
+// 	checkerr(err)
+
+// 	go func() {
+// 		m.Run()
+// 	}()
+// 	err = session.LoginAndServe(false)
+
+// 	log.Println("start run test...")
+// 	os.Exit(0)
+// }
+
+//still somewhat error, it's hard to test
+func init() {
+	//wait login
+
+}
+
+// error: [E] BaseResponse.Ret=1
+func TestSendImage(t *testing.T) {
+	wait()
+
+	//url := "http://wx2.sinaimg.cn/mw1024/9d52c073gy1foxoszeu10j20sg0zkk4y.jpg"
+	url := "https://honeysanime.com/wp-content/uploads/2016/05/Chi%E2%80%99s-Sweet-Home-Wallpaper.jpg"
+	resp, err := http.Get(url)
+	if err != nil {
+		return
+	}
+	data, _ := ioutil.ReadAll(resp.Body)
+	name := "休比"
+
+	aa := base64.StdEncoding.EncodeToString(data)
+
+	SendImage([]byte(aa), url, name, session)
+}
 
 func TestSend(t *testing.T) {
 	for session.Cm == nil {
